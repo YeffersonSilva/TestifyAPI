@@ -56,5 +56,11 @@ router.delete('/:id', (req, res) => {
     }
     return res.status(404).json({ message: 'Client not found' });
 });
+´
 
+//
+
+router.get('/', (req, res) => {
+    return res.status(200).json(clients);
+});
 export { router };
