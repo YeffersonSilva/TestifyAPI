@@ -16,7 +16,10 @@ router.post('/users', (req, res) => {
     users.push({ name, adress, age } )
 
    return res.status(201).send(users)
-    })
+})
+router.get('/users', (req, res) => {
+    return res.status(200).send(users)
+})
 
 app.use(router)
 
