@@ -1,4 +1,5 @@
 import express from 'express';
+import Joi from 'joi';  // Importa Joi
 const router = express.Router();
 
 // Datos de ejemplo para clientes
@@ -7,8 +8,19 @@ let clients = [
     { id: 'C0002', name: 'Client 2', email: 'client2@example.com' }
 ];
 
+// Esquema de validación para clientes
+const clientSchema = Joi.object({
+    name: Joi.string().min(3).required(),
+    email: Joi.string().email().required()
+});
+
 // GET todos los clientes
 router.get('/', (req, res) => {
+    const { name } = req.query;
+    if (name) {
+        const filteredClients = clients.filter(client => client.name.toLowerCase().includes(name.toLowerCase()));
+        return res.status(200).json(filteredClients);
+    }
     return res.status(200).json(clients);
 });
 
@@ -23,26 +35,30 @@ router.get('/:id', (req, res) => {
 
 // POST crear un nuevo cliente
 router.post('/', (req, res) => {
-    const { name, email } = req.body;
-    if (name && email) {
-        const newClient = { id: `C000${clients.length + 1}`, name, email };
-        clients.push(newClient);
-        return res.status(201).json({ message: 'Client created' });
+    const { error } = clientSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ message: 'Invalid data', details: error.details });
     }
-    return res.status(400).json({ message: 'Client not created' });
+
+    const { name, email } = req.body;
+    const newClient = { id: `C000${clients.length + 1}`, name, email };
+    clients.push(newClient);
+    return res.status(201).json({ message: 'Client created', client: newClient });
 });
 
 // PUT actualizar cliente por ID
 router.put('/:id', (req, res) => {
+    const { error } = clientSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ message: 'Invalid data', details: error.details });
+    }
+
     const client = clients.find(c => c.id === req.params.id);
     if (client) {
         const { name, email } = req.body;
-        if (name && email) {
-            client.name = name;
-            client.email = email;
-            return res.status(200).json({ message: 'Client updated' });
-        }
-        return res.status(400).json({ message: 'Invalid data' });
+        client.name = name;
+        client.email = email;
+        return res.status(200).json({ message: 'Client updated', client });
     }
     return res.status(404).json({ message: 'Client not found' });
 });
@@ -51,16 +67,10 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
     const clientIndex = clients.findIndex(c => c.id === req.params.id);
     if (clientIndex !== -1) {
-        clients.splice(clientIndex, 1);
-        return res.status(200).json({ message: 'Client deleted' });
+        const deletedClient = clients.splice(clientIndex, 1);
+        return res.status(200).json({ message: 'Client deleted', client: deletedClient[0] });
     }
     return res.status(404).json({ message: 'Client not found' });
 });
-´
 
-//
-
-router.get('/', (req, res) => {
-    return res.status(200).json(clients);
-});
 export { router };
